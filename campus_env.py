@@ -5,7 +5,7 @@ import random
 
 # Grid dimensions - reduced for tabular Q-learning
 GRID_WIDTH = 20
-GRID_HEIGHT = 15
+GRID_HEIGHT = 20
 
 # Cell types
 EMPTY = 0
@@ -112,6 +112,31 @@ class CampusEnv(gym.Env):
     
     def create_surface_grid(self) -> np.ndarray:
       grid = np.zeros((self.grid_height, self.grid_width))
+      
+      building_mappings = [
+        # (x, y, building_code)
+        (9, 1, BUILDINGS['Marino']),
+        (10, 4, BUILDINGS['Cabot']),
+        (9, 8, BUILDINGS['Forsyth']),
+        (2, 4, BUILDINGS['West Village H']),
+        (11, 9, BUILDINGS['Churchill']),
+        (13, 8, BUILDINGS['Hayden']),
+        (13, 4, BUILDINGS['Richards']),
+        (15, 6, BUILDINGS['Ell']),
+        (16, 4, BUILDINGS['Dodge']),
+        (18, 7, BUILDINGS['Mugar']),
+        (12, 11, BUILDINGS['Snell Library']),
+        (9, 11, BUILDINGS['Snell Engineering']),
+        (15, 10, BUILDINGS['Curry Student Center']),
+        (2, 15, BUILDINGS['Ryder']),
+        (5, 12, BUILDINGS['Shillman']),
+        (13, 16, BUILDINGS['ISEC'])
+      ]
+      
+      for x, y, code in building_mappings:
+            if 0 <= y < self.grid_height and 0 <= x < self.grid_width:
+                grid[y, x] = code
+                
       return grid
     
     def create_tunnel_grid(self) -> np.ndarray:
