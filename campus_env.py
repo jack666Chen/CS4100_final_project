@@ -140,7 +140,46 @@ class CampusEnv(gym.Env):
       return grid
     
     def create_tunnel_grid(self) -> np.ndarray:
-      grid = np.full((self.grid_height, self.grid_width), WALL)
+      grid = np.full((self.grid_height, self.grid_width), WALL, dtype=np.int32)
+        
+      # Accurate tunnel corridor coordinates
+      tunnel_coordinates = [
+          (13, 4), (13, 5), (13, 6), (13, 7), (13, 8),  # Richards to Hayden
+          (12, 7), (11, 7), (10, 7), (10, 5), (10, 4),  # Richards to Cabot
+          (12, 8), (11, 8), (11, 9),                    # Hayden to Churchill
+          (10, 9), (9, 9), (9, 8),                      # Churchill to Forsyth
+          (9, 10), (9, 11),                             # Between Churchill/Forsyth to Snell Eng
+          (12, 8), (12, 9), (12, 10), (12, 11),        # Hayden to Snell Library
+          (14, 7), (14, 6), (15, 6),                   # Richards to Ell
+          (16, 6), (16, 5), (16, 4),                   # Ell to Dodge
+          (17, 6), (18, 6), (18, 7)                    # Dodge to Mugar
+      ]
+      
+      # Mark tunnel corridors as walkable
+      for x, y in tunnel_coordinates:
+          if 0 <= y < self.grid_height and 0 <= x < self.grid_width:
+              grid[y, x] = TUNNEL
+      
+      # Building tunnel entrances (11 buildings with tunnel access)
+      tunnel_building_entrances = [
+          (13, 4, BUILDINGS['Richards']),
+          (15, 6, BUILDINGS['Ell']),
+          (16, 4, BUILDINGS['Dodge']),
+          (10, 4, BUILDINGS['Cabot']),
+          (18, 7, BUILDINGS['Mugar']),
+          (15, 10, BUILDINGS['Curry Student Center']),
+          (12, 11, BUILDINGS['Snell Library']),
+          (9, 11, BUILDINGS['Snell Engineering']),
+          (11, 9, BUILDINGS['Churchill']),
+          (13, 8, BUILDINGS['Hayden']),
+          (9, 8, BUILDINGS['Forsyth']),
+      ]
+      
+      # Place building entrances in tunnel grid
+      for x, y, code in tunnel_building_entrances:
+          if 0 <= y < self.grid_height and 0 <= x < self.grid_width:
+              grid[y, x] = code
+      
       return grid
     
     def reset(self):
