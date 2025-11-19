@@ -132,4 +132,30 @@ class CampusEnv(gym.Env):
       }
       return obs
     
+    def is_terminal(self):
+      return False
+    
+    def move_player(self, action):
+      return ""
+    
+    def move_player_to_random_adjacent(self):
+      return ""
+    
+    def try_toggle_layer(self):
+      return ""
+    
+    def play_turn(self, action):
+      return ""
+    
+    def step(self, actions):
+      observation = ""
+      reward = ""
+      done = ""
+      info = "" # empty strings are placeholders
+      return observation, reward, done, info
+    
+    def render(self, mode='human'):
+      print("")
+      
+    
 
