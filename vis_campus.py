@@ -3,7 +3,7 @@ import sys, time, math, random
 import pygame
 
 # Import your new environment
-from campus_env import CampusRouteEnv   # make sure campus_env.py is alongside this file
+from campus_env_ai_test_model import CampusRouteEnv   # make sure campus_env.py is alongside this file
 
 # ------------------- Display constants -------------------
 CONSOLE_WIDTH = 380
