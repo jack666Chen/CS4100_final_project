@@ -226,15 +226,62 @@ class CampusEnv(gym.Env):
       return self.get_observation, 0, False, {}
     
     def get_observation(self):
-      obs = {
-        'position': "",
-        'layer': "",
-        'weather': "",
-        'crowd': "",
-        'at_goal': "",
-        'current_building': ""
-      }
-      return obs
+        player_position = self.current_state['position']
+        px, py = player_position
+        layer = self.current_state['layer']
+        current_map = self.surface_map if self.layer == 0 else self.tunnel_map
+        
+        goal_building_code = BUILDINGS.get(self.goal_building)
+
+        # Build 3x3 window with information about each cell
+        window = {}
+        for dx in [-1, 0, 1]:
+            for dy in [-1, 0, 1]:
+                cell_x, cell_y = px + dx, py + dy
+                
+                # Check if cell is within bounds
+                if 0 <= cell_x < self.grid_width and 0 <= cell_y < self.grid_height:
+                    cell_value = current_map[cell_y, cell_x]
+                    
+                    # Get building code (0 if not a building, actual code 10-25 if it is)
+                    building_code = cell_value if cell_value in BUILDINGS.values() else 0
+                    
+                    # Check if it's a wall
+                    is_wall = 1 if cell_value == WALL else 0
+                    
+                    # Check if it's the toggle position
+                    can_toggle_layer = 1 if building_code in self.tunnel_map else 0
+
+                    # check if it's the goal position
+                    is_goal = 1 if cell_value == goal_building_code else 0
+                else:
+                    building_code = 0
+                    is_wall = 1
+                    can_toggle_layer = 0
+                    is_goal = 0
+                
+                window[(dx, dy)] = {
+                    'building_code': building_code, 
+                    'is_wall': is_wall,
+                    'can_toggle_layer': can_toggle_layer,
+                    'is_goal': is_goal
+                }
+        
+        weather = self.current_state['weather']
+        crowd = self.current_state['crowd']
+
+        obs = {
+            'position': (px, py),
+            'layer': layer,
+            'weather': weather,
+            'crowd': crowd,
+            'current_building': window[(0, 0)]['building_code'],
+            'is_wall': window[(0, 0)]['is_wall'],
+            'can_toggle_layer': window[(0, 0)]['can_toggle_layer'],
+            'is_goal': window[(0, 0)]['is_goal']
+        }
+
+        return obs
     
     def is_terminal(self):
       return False
