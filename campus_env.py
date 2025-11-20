@@ -231,7 +231,7 @@ class CampusEnv(gym.Env):
             'crowd': self.crowd,
         }
         
-      return self.get_observation(), 0, False, {}
+        return self.get_observation(), 0, False, {}
     
     def get_observation(self):
         player_position = self.current_state['position']
