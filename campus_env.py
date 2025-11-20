@@ -104,6 +104,8 @@ class CampusEnv(gym.Env):
             'layer': spaces.Discrete(2),
             'weather': spaces.Discrete(len(self.weather_conditions)),
             'crowd': spaces.Discrete(len(self.crowd_levels)),
+            'current_building': spaces.Discrete(26),  
+            'can_toggle_layer': spaces.Discrete(2), 
             'at_goal': spaces.Discrete(2)
         })
         
