@@ -183,6 +183,44 @@ class CampusEnv(gym.Env):
       return grid
     
     def reset(self):
+      """
+      Reset the player and map(weather, crowd) to the initial state
+      """
+      # Reset step counter
+      self.steps = 0
+      
+      # Randomly choose starting layer (0 = surface, 1 = tunnel)
+      self.layer = random.randint(0, 1)
+      
+      # Reset the weather
+      self.weather = random.choice(self.weather_conditions)
+      self.crowd = random.choice(self.crowd_levels)
+      
+      # Choose a random starting position for the player that is not the goal
+      goal_building_code = BUILDINGS.get(self.goal_building)
+      valid_positions = []
+      
+      # Select the appropriate map based on layer
+      current_map = self.surface_map if self.layer == 0 else self.tunnel_map
+      
+      for y in range(self.grid_height):
+          for x in range(self.grid_width):
+              cell_value = current_map[y, x]
+              
+              # For surface layer: exclude goal building (no WALL in surface_map)
+              if self.layer == 0:
+                  if cell_value != goal_building_code:
+                      valid_positions.append((x, y))
+              # For tunnel layer: exclude WALL and goal building
+              else:
+                  if cell_value != WALL and cell_value != goal_building_code:
+                      valid_positions.append((x, y))
+      
+      if not valid_positions:
+          self.position = (0, 0)
+      else:
+          self.position = random.choice(valid_positions)
+      
       return self.get_observation, 0, False, {}
     
     def get_observation(self):
