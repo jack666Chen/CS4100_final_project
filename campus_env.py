@@ -152,7 +152,7 @@ class CampusEnv(gym.Env):
           (9, 10), (9, 11),                             # Between Churchill/Forsyth to Snell Eng
           (12, 8), (12, 9), (12, 10), (12, 11),        # Hayden to Snell Library
           (14, 7), (14, 6), (15, 6),                   # Richards to Ell
-          (16, 6), (16, 5), (16, 4),                   # Ell to Dodge
+          (16, 6), (16, 5), (17, 5),                   # Ell to Dodge
           (17, 6), (18, 6), (18, 7)                    # Dodge to Mugar
       ]
       
