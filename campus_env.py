@@ -43,8 +43,7 @@ BASE_TRAVERSAL_TIMES = {
 for building_code in BUILDINGS.values():
     BASE_TRAVERSAL_TIMES[building_code] = 0.5
     
-class CampusEnv(gym.Env):
-    
+class CampusEnv(gym.Env):  
     metadata = {'render.modes': ['human']}
     
     def __init__(self, goal_building: str = 'Snell Library'):
@@ -117,22 +116,22 @@ class CampusEnv(gym.Env):
       
       building_mappings = [
         # (x, y, building_code)
-        (9, 1, BUILDINGS['Marino']),
-        (10, 4, BUILDINGS['Cabot']),
-        (9, 8, BUILDINGS['Forsyth']),
-        (2, 4, BUILDINGS['West Village H']),
-        (11, 9, BUILDINGS['Churchill']),
-        (13, 8, BUILDINGS['Hayden']),
-        (13, 4, BUILDINGS['Richards']),
-        (15, 6, BUILDINGS['Ell']),
-        (16, 4, BUILDINGS['Dodge']),
-        (18, 7, BUILDINGS['Mugar']),
-        (12, 11, BUILDINGS['Snell Library']),
-        (9, 11, BUILDINGS['Snell Engineering']),
-        (15, 10, BUILDINGS['Curry Student Center']),
-        (2, 15, BUILDINGS['Ryder']),
-        (5, 12, BUILDINGS['Shillman']),
-        (13, 16, BUILDINGS['ISEC'])
+        ([(9, 1), (10, 1), (9, 0), (10, 0)], BUILDINGS['Marino']),
+        ([(10, 4), (9, 4), (10, 5), (9, 5), (10, 6), (9, 6)], BUILDINGS['Cabot']),
+        ([(9, 8), (9, ), (8, 8), (8, 9)], BUILDINGS['Forsyth']),
+        ([(2, 4), (1, 4), (1, 5)], BUILDINGS['West Village H']),
+        ([(11, 9)], BUILDINGS['Churchill']),
+        ([(13, 8), (13, 6), (13, 7), (12, 6), (12, 7), (12, 8)], BUILDINGS['Hayden']),
+        ([(13, 4), (12, 3), (13, 3), (13, 5), (12, 5)], BUILDINGS['Richards']),
+        ([(15, 6), (16, 6), (16, 7), (15, 7)], BUILDINGS['Ell']),
+        ([(17, 4), (17, 3), (17, 5)], BUILDINGS['Dodge']),
+        ([(19, 7), (18, 7)], BUILDINGS['Mugar']),
+        ([(12, 11), (13, 12), (12, 12), (11, 12), (11, 13), (13, 11)], BUILDINGS['Snell Library']),
+        ([(9, 11), (8, 11), (10, 11)], BUILDINGS['Snell Engineering']),
+        ([(15, 10), (16, 10), (16, 9), (16, 8), (15, 8), (15, 9)], BUILDINGS['Curry Student Center']),
+        ([(2, 15), (2, 16), (1, 15), (1, 16)], BUILDINGS['Ryder']),
+        ([(5, 12), (4, 12), (6, 12)], BUILDINGS['Shillman']),
+        ([(13, 16), (14, 16), (13, 17), (14, 17)], BUILDINGS['ISEC'])
       ]
       
       for x, y, code in building_mappings:
@@ -189,49 +188,49 @@ class CampusEnv(gym.Env):
         Reset the player and map(weather, crowd) to the initial state
         """
         # Reset step counter
-        self.steps = 0
-      
-        # Randomly choose starting layer (0 = surface, 1 = tunnel)
-        self.layer = random.randint(0, 1)
-      
-        # Reset the weather
-        self.weather = random.choice(self.weather_conditions)
-        self.crowd = random.choice(self.crowd_levels)
-      
-        # Choose a random starting position for the player that is not the goal
-        goal_building_code = BUILDINGS.get(self.goal_building)
-        valid_positions = []
-      
-         # Select the appropriate map based on layer
-        current_map = self.surface_map if self.layer == 0 else self.tunnel_map
-      
-        for y in range(self.grid_height):
-            for x in range(self.grid_width):
-                cell_value = current_map[y, x]
-              
-                # For surface layer: exclude any buildings
-                if self.layer == 0:
-                    if cell_value not in BUILDINGS.value():
-                        valid_positions.append((x, y))
-                # For tunnel layer: exclude WALL and goal building
-                else:
-                    if cell_value != WALL and cell_value != goal_building_code:
-                        valid_positions.append((x, y))
-      
-        if not valid_positions:
-            self.position = (0, 0)
-        else:
-            self.position = random.choice(valid_positions)
+      self.steps = 0
+    
+      # Randomly choose starting layer (0 = surface, 1 = tunnel)
+      self.layer = random.randint(0, 1)
+    
+      # Reset the weather
+      self.weather = random.choice(self.weather_conditions)
+      self.crowd = random.choice(self.crowd_levels)
+    
+      # Choose a random starting position for the player that is not the goal
+      goal_building_code = BUILDINGS.get(self.goal_building)
+      valid_positions = []
+    
+        # Select the appropriate map based on layer
+      current_map = self.surface_map if self.layer == 0 else self.tunnel_map
+    
+      for y in range(self.grid_height):
+          for x in range(self.grid_width):
+              cell_value = current_map[y, x]
+            
+              # For surface layer: exclude any buildings
+              if self.layer == 0:
+                  if cell_value not in BUILDINGS.value():
+                      valid_positions.append((x, y))
+              # For tunnel layer: exclude WALL and goal building
+              else:
+                  if cell_value != WALL and cell_value != goal_building_code:
+                      valid_positions.append((x, y))
+    
+      if not valid_positions:
+          self.position = (0, 0)
+      else:
+          self.position = random.choice(valid_positions)
 
-        # Store current state
-        self.current_state = {
-            'position': self.position,
-            'layer': self.layer,
-            'weather': self.weather,
-            'crowd': self.crowd,
-        }
-        
-        return self.get_observation(), 0, False, {}
+      # Store current state
+      self.current_state = {
+          'position': self.position,
+          'layer': self.layer,
+          'weather': self.weather,
+          'crowd': self.crowd,
+      }
+      
+      return self.get_observation(), 0, False, {}
     
     def get_observation(self):
         player_position = self.current_state['position']
