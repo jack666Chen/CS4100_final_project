@@ -3,6 +3,7 @@ import pygame
 
 from campus_env import CampusEnv, BUILDINGS, EMPTY, WALL, TUNNEL
 
+CODE2BUILDING = {code: name for name, code in BUILDINGS.items()}
 
 CONSOLE_WIDTH = 380
 PADDING = 4
@@ -95,6 +96,8 @@ class CampusGUI:
 
         self.recent = []
         self.max_recent = 10
+
+        self.hover_cell = None
 
         # state
         self.obs = self._safe_reset()
@@ -226,6 +229,8 @@ class CampusGUI:
         if self.show_grid:
             self._draw_grid()
 
+        self._draw_hover_label()
+
     # Draw the goal cell in this case
     def _draw_goal_cells(self):
         goal_name = getattr(self.env, "goal_building", None)
@@ -333,6 +338,52 @@ class CampusGUI:
         self.recent.append(msg)
         if len(self.recent) > self.max_recent:
             self.recent.pop(0)
+
+
+    def _draw_hover_label(self):
+        # Mouse position in pixels
+        mx, my = pygame.mouse.get_pos()
+
+        # Only show label if mouse is over the grid area
+        if not (0 <= mx < self.grid_w and 0 <= my < self.grid_h):
+            return
+
+        # Convert pixels -> grid coordinates
+        x = mx // self.cell
+        y = my // self.cell
+
+        if not (0 <= x < self.env.grid_width and 0 <= y < self.env.grid_height):
+            return
+
+        grid = self._get_active_layer_grid()
+        if grid is None:
+            return
+
+        val = grid[y, x]
+        name = CODE2BUILDING.get(val)
+        if not name:
+            return  # not a building cell
+
+        # Render text surface
+        text_surf = self.font.render(name, True, BLACK)
+        text_rect = text_surf.get_rect()
+
+        # Position tooltip near the mouse
+        text_rect.topleft = (mx + 10, my - text_rect.height - 6)
+
+        # Keep it inside the grid window
+        if text_rect.right > self.grid_w:
+            text_rect.right = self.grid_w - 2
+        if text_rect.top < 0:
+            text_rect.top = 2
+
+        # Background box
+        bg_rect = text_rect.inflate(6, 4)
+        pygame.draw.rect(self.screen, YELLOW, bg_rect)
+        pygame.draw.rect(self.screen, BLACK, bg_rect, 1)
+
+        # Draw text
+        self.screen.blit(text_surf, text_rect.topleft)
 
 
 def main():
