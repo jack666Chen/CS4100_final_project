@@ -103,8 +103,8 @@ class CampusGUI:
 
     def _safe_reset(self):
         # Handles when env.reset() finish.
-        out, i, bool, dic = self.env.reset()
-        return out()
+        obs, reward, done, info = self.env.reset()
+        return obs
     
 
     def _safe_step(self, action_idx: int):

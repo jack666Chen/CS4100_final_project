@@ -57,8 +57,8 @@ class CampusEnv(gym.Env):
         self.goal_building = goal_building
         
         # Create map layers
-        self.surface_map = self._create_surface_grid()
-        self.tunnel_map = self._create_tunnel_grid()
+        self.surface_map = self.create_surface_grid()
+        self.tunnel_map = self.create_tunnel_grid()
         
         # Environmental conditions
         self.weather_conditions = ['clear', 'rain', 'snow']
@@ -118,7 +118,7 @@ class CampusEnv(gym.Env):
         # (x, y, building_code)
         ([(9, 1), (10, 1), (9, 0), (10, 0)], BUILDINGS['Marino']),
         ([(10, 4), (9, 4), (10, 5), (9, 5), (10, 6), (9, 6)], BUILDINGS['Cabot']),
-        ([(9, 8), (9, ), (8, 8), (8, 9)], BUILDINGS['Forsyth']),
+        ([(9, 8), (9, 7), (8, 8), (8, 9)], BUILDINGS['Forsyth']),
         ([(2, 4), (1, 4), (1, 5)], BUILDINGS['West Village H']),
         ([(11, 9)], BUILDINGS['Churchill']),
         ([(13, 8), (13, 6), (13, 7), (12, 6), (12, 7), (12, 8)], BUILDINGS['Hayden']),
@@ -134,9 +134,12 @@ class CampusEnv(gym.Env):
         ([(13, 16), (14, 16), (13, 17), (14, 17)], BUILDINGS['ISEC'])
       ]
       
-      for x, y, code in building_mappings:
-            if 0 <= y < self.grid_height and 0 <= x < self.grid_width:
-                grid[y, x] = code
+      ''' I did a slight change to this function, the previous version is buggy   -- Jack '''
+      for pos, code in building_mappings:
+            for x, y in pos:
+                if 0 <= y < self.grid_height and 0 <= x < self.grid_width:
+                    grid[y, x] = code                  
+
                 
       return grid
     
@@ -210,7 +213,7 @@ class CampusEnv(gym.Env):
             
               # For surface layer: exclude any buildings
               if self.layer == 0:
-                  if cell_value not in BUILDINGS.value():
+                  if cell_value not in BUILDINGS.values():
                       valid_positions.append((x, y))
               # For tunnel layer: exclude WALL and goal building
               else:
