@@ -294,6 +294,7 @@ class CampusEnv(gym.Env):
         player_position = self.current_state['position']
         px, py = player_position
         crowd_positions = self.current_state['crowd_positions']
+
         layer = self.current_state['layer']
         current_map = self.surface_map if self.layer == 0 else self.tunnel_map
         
@@ -461,7 +462,9 @@ class CampusEnv(gym.Env):
         if cell_value in BUILDINGS.values():
             if cell_value in self.tunnel_building_codes:
                 # Toggle layer
-                self.current_state["layer"] = 1 - self.current_state["layer"]
+                new_layer = 1 - self.current_state["layer"]
+                self.current_state["layer"] = new_layer
+                self.layer = new_layer
                 return "Toggled layer successfully.", 0
             else:
                 return "Building has no tunnel access.", self.rewards.get(
