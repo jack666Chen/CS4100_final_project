@@ -238,52 +238,52 @@ class CampusEnv(gym.Env):
         # Reset step counter
         self.steps = 0
 
+        # Reset time
+        self.time = 0.0
+    
         # Randomly choose starting layer (0 = surface, 1 = tunnel)
-        layer = random.randint(0, 1)
-
+        self.layer = random.randint(0, 1)
+    
         # Reset the weather
-        weather = random.choice(self.weather_conditions)
-        crowd = random.choice(self.crowd_levels)
-
+        self.weather = random.choice(self.weather_conditions)
+    
+        # Choose a random starting position for the player that is not the goal
+        goal_building_code = BUILDINGS.get(self.goal_building)
         valid_positions = []
-
+    
         # Select the appropriate map based on layer
-        current_map = self.surface_map if layer == 0 else self.tunnel_map
-
+        current_map = self.surface_map if self.layer == 0 else self.tunnel_map
+    
         for y in range(self.grid_height):
             for x in range(self.grid_width):
                 cell_value = current_map[y, x]
-
-                # For surface layer: exclude any buildings
-                if layer == 0:
-                    if cell_value not in BUILDINGS.values() and cell_value != WALL:
-                        valid_positions.append((x, y))
-                # For tunnel layer: exclude WALL and goal building
-                else:
-                    if cell_value != WALL and cell_value != self.goal_building_code:
-                        valid_positions.append((x, y))
-
+            
+                if cell_value != WALL and cell_value != goal_building_code:
+                    valid_positions.append((x, y))
+    
         if not valid_positions:
-            position = (0, 0)
-            crowd_positions = [(0, 0)] * 10
+            self.position = (0, 0)
+            crowd_positions = {}
         else:
-            position = random.choice(valid_positions)
+            self.position = random.choice(valid_positions)
             # Randomly select 10 unique crowded positions (no duplicates, excluding player position)
-            available_positions = [pos for pos in valid_positions if pos != position]
+            available_positions = [pos for pos in valid_positions if pos != self.position]
             num_crowded = min(10, len(available_positions))
             if num_crowded > 0:
-                crowd_positions = random.sample(available_positions, num_crowded)
+                selected_positions = random.sample(available_positions, num_crowded)
+                # we assign a random crowd level to each selected position
+                crowd_positions = {pos: random.choice(self.crowd_levels) for pos in selected_positions}
             else:
-                crowd_positions = []
+                crowd_positions = {}
 
         self.current_state = {
-            "position": position,
-            "layer": layer,
-            "weather": weather,
-            "crowd": crowd,
-            "crowd_positions": crowd_positions,
+            'time': self.time,
+            'position': self.position,
+            'layer': self.layer,
+            'weather': self.weather,
+            'crowd_positions': crowd_positions,
         }
-
+      
         return self.get_observation(), 0, False, {}
 
     def get_observation(self):
