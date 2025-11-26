@@ -140,6 +140,10 @@ class CampusEnv(gym.Env):
         self.max_steps = 1000
         self.steps = 0
 
+        self.max_time = 100
+        self.time = 0.0
+
+        self.goal_building = goal_building
         self.goal_building_code = BUILDINGS[goal_building]
 
         # Create map layers
