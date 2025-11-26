@@ -47,6 +47,8 @@ HELP_LINES = [
     "",
     "  R = reset",
     "  G = toggle grid",
+    "",
+    "Crowds:",
 ]
 
 LAYER_LABELS = {
@@ -296,7 +298,6 @@ class CampusGUI:
             f"Grid: {self.env.grid_width}x{self.env.grid_height} | FPS: {self.fps}",
             f"Layer: {layer_name}",
             f"Weather: {weather_name}",
-            f"Crowd: {crowd_name}",
             f"Goal building: {goal_building}",
             f"At goal?: {at_goal_str}",
             f"Current building: {curr_bldg}",
@@ -307,6 +308,24 @@ class CampusGUI:
         for s in lines:
             txt = self.font.render(s, True, BLACK)
             self.screen.blit(txt, (x0, y))
+
+            # This draws the mark of the crowd
+            if s.startswith("Crowds:"):
+
+                legend_y = y + 24
+
+                self._draw_crowd_icon(x0 + 20, legend_y, "low")
+                self.screen.blit(self.font.render("Low", True, BLACK), (x0 + 40, legend_y - 8))
+
+                self._draw_crowd_icon(x0 + 110, legend_y, "medium")
+                self.screen.blit(self.font.render("Medium", True, BLACK), (x0 + 130, legend_y - 8))
+
+                self._draw_crowd_icon(x0 + 220, legend_y, "high")
+                self.screen.blit(self.font.render("High", True, BLACK), (x0 + 240, legend_y - 8))
+
+                y += 30
+
+
             y += 22
 
         # Recent events
@@ -332,22 +351,57 @@ class CampusGUI:
         if len(self.recent) > self.max_recent:
             self.recent.pop(0)
 
-
+    # Helper to draw crowd cells
     def _draw_crowd_cells(self):
-        """Draw the crowded cell, should be red circles"""
-        state = getattr(self.env, "current_state", {})
-        crowd_positions = state.get("crowd_positions", [])
 
-        for (x, y) in crowd_positions:
-            # safety: ensure within bounds
+        state = getattr(self.env, "current_state", {})
+        crowd_positions = state.get("crowd_positions", {})
+
+        # crowd_positions is a dict: {(x, y): level_str}
+        for (x, y), level in crowd_positions.items():
             if not (0 <= x < self.env.grid_width and 0 <= y < self.env.grid_height):
                 continue
 
             rect = self._cell_rect(x, y)
             cx, cy = rect.center
-            radius = int(self.cell * 0.25)
-            pygame.draw.circle(self.screen, RED, (cx, cy), radius)
+            s = int(self.cell * 0.25)  # “radius” / half-size
 
+            # Choose shape by level
+            # triangle -> low
+            # rectangle -> med
+            # pantagon -> high
+            level = str(level).lower()
+            self._draw_crowd_icon(cx, cy, level, s)
+
+    # Helper to draw different shape for different crowd
+    def _draw_crowd_icon(self, cx, cy, level, s = 7):
+
+        level = str(level).lower()
+        if level == "low":  
+            # triangle
+            points = [
+                (cx,       cy - s),
+                (cx - s,   cy + s),
+                (cx + s,   cy + s),
+            ]
+        elif level == "medium":  
+            # square
+            points = [
+                (cx - s, cy - s),
+                (cx + s, cy - s),
+                (cx + s, cy + s),
+                (cx - s, cy + s),
+            ]
+        else:  
+            # pentagon for high
+            points = []
+            for i in range(5):
+                angle = -math.pi / 2 + i * 2 * math.pi / 5
+                px = cx + s * math.cos(angle)
+                py = cy + s * math.sin(angle)
+                points.append((px, py))
+
+        pygame.draw.polygon(self.screen, RED, points)
 
 
     def _draw_hover_label(self):
