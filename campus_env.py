@@ -180,53 +180,61 @@ class CampusEnv(gym.Env):
       return grid
     
     def reset(self):
-      """
+        """
         Reset the player and map(weather, crowd) to the initial state
         """
         # Reset step counter
-      self.steps = 0
+        self.steps = 0
     
-      # Randomly choose starting layer (0 = surface, 1 = tunnel)
-      self.layer = random.randint(0, 1)
+        # Randomly choose starting layer (0 = surface, 1 = tunnel)
+        self.layer = random.randint(0, 1)
     
-      # Reset the weather
-      self.weather = random.choice(self.weather_conditions)
-      self.crowd = random.choice(self.crowd_levels)
+         # Reset the weather
+        self.weather = random.choice(self.weather_conditions)
+        self.crowd = random.choice(self.crowd_levels)
     
-      # Choose a random starting position for the player that is not the goal
-      goal_building_code = BUILDINGS.get(self.goal_building)
-      valid_positions = []
+        # Choose a random starting position for the player that is not the goal
+        goal_building_code = BUILDINGS.get(self.goal_building)
+        valid_positions = []
     
         # Select the appropriate map based on layer
-      current_map = self.surface_map if self.layer == 0 else self.tunnel_map
+        current_map = self.surface_map if self.layer == 0 else self.tunnel_map
     
-      for y in range(self.grid_height):
-          for x in range(self.grid_width):
-              cell_value = current_map[y, x]
+        for y in range(self.grid_height):
+            for x in range(self.grid_width):
+                cell_value = current_map[y, x]
             
-              # For surface layer: exclude any buildings
-              if self.layer == 0:
-                  if cell_value not in BUILDINGS.values():
-                      valid_positions.append((x, y))
-              # For tunnel layer: exclude WALL and goal building
-              else:
-                  if cell_value != WALL and cell_value != goal_building_code:
-                      valid_positions.append((x, y))
+                # For surface layer: exclude any buildings
+                if self.layer == 0:
+                    if cell_value not in BUILDINGS.values():
+                        valid_positions.append((x, y))
+                # For tunnel layer: exclude WALL and goal building
+                else:
+                    if cell_value != WALL and cell_value != goal_building_code:
+                        valid_positions.append((x, y))
     
-      if not valid_positions:
-          self.position = (0, 0)
-      else:
-          self.position = random.choice(valid_positions)
+        if not valid_positions:
+            self.position = (0, 0)
+            crowd_positions = [(0, 0)] * 10
+        else:
+            self.position = random.choice(valid_positions)
+            # Randomly select 10 unique crowded positions (no duplicates, excluding player position)
+            available_positions = [pos for pos in valid_positions if pos != self.position]
+            num_crowded = min(10, len(available_positions))
+            if num_crowded > 0:
+                crowd_positions = random.sample(available_positions, num_crowded)
+            else:
+                crowd_positions = []
 
-      # Store current state
-      self.current_state = {
-          'position': self.position,
-          'layer': self.layer,
-          'weather': self.weather,
-          'crowd': self.crowd,
-      }
+        self.current_state = {
+            'position': self.position,
+            'layer': self.layer,
+            'weather': self.weather,
+            'crowd': self.crowd,
+            'crowd_positions': crowd_positions,
+        }
       
-      return self.get_observation(), 0, False, {}
+        return self.get_observation(), 0, False, {}
     
     def get_observation(self):
         player_position = self.current_state['position']
