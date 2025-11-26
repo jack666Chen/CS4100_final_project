@@ -366,6 +366,52 @@ class CampusEnv(gym.Env):
     def move_player_to_random_adjacent(self):
         return ""
 
+    def move_crowd_random(self):
+        """
+        Move each crowd to a random adjacent position, and confirm that each crowd has a unique position.
+        Each crowd maintains its own crowd level when moving.
+        """
+        current_map = self.surface_map if self.current_state['layer'] == 0 else self.tunnel_map
+        crowd_positions = self.current_state['crowd_positions']
+        player_position = self.current_state['position']
+        
+        new_crowd_positions = {}
+        # Include all old crowd positions and player position as occupied initially
+        occupied_positions = {player_position}
+        occupied_positions.update(crowd_positions.keys())
+        
+        for old_position, crowd_level in crowd_positions.items():
+            x, y = old_position
+            directions = [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1), (x, y)]
+            
+            adjacent_positions = [
+                pos for pos in directions
+                if 0 <= pos[0] < self.grid_width and 0 <= pos[1] < self.grid_height 
+                and current_map[pos[1], pos[0]] != WALL
+            ]
+            
+            # Remove old_position from occupied temporarily to allow staying in place
+            # but exclude other occupied positions (other crowds' old positions and newly assigned positions)
+            available_positions = [
+                pos for pos in adjacent_positions
+                if pos not in (occupied_positions - {old_position})
+            ]
+            
+            if available_positions:
+                new_position = random.choice(available_positions)
+            elif adjacent_positions:
+                new_position = old_position
+            else:
+                new_position = old_position
+            
+            # we keep the same crowd level when moving to new position
+            new_crowd_positions[new_position] = crowd_level
+            occupied_positions.discard(old_position)
+            occupied_positions.add(new_position)
+        
+        self.current_state['crowd_positions'] = new_crowd_positions
+
+
     def try_toggle_layer(self):
         return ""
 
