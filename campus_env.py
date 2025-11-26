@@ -82,6 +82,8 @@ class CampusEnv(gym.Env):
             'Curry Student Center', 'Snell Library',
             'Churchill', 'Hayden', 'Forsyth', 'Snell Engineering'
         ]
+
+        self.tunnel_building_codes = {BUILDINGS[name] for name in self.tunnel_buildings if name in BUILDINGS}
         
         # Rewards
         self.rewards = {
