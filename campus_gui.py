@@ -1,5 +1,6 @@
 import sys
 import pygame
+import math
 
 from campus_env import CampusEnv, BUILDINGS, EMPTY, WALL, TUNNEL
 
@@ -141,7 +142,7 @@ class CampusGUI:
                         if done:
                             end_text = "Episode finished. Press R to reset."
                     elif event.key == pygame.K_r:
-                        self.obs, _info = self._safe_reset()
+                        self.obs = self._safe_reset()
                         self.recent.clear()
                         end_text = None
                     elif event.key == pygame.K_g:
@@ -225,6 +226,9 @@ class CampusGUI:
 
         # draw agent
         self._draw_agent()
+        
+        # draw the crowdsr
+        self._draw_crowd_cells()
 
         if self.show_grid:
             self._draw_grid()
@@ -338,6 +342,23 @@ class CampusGUI:
         self.recent.append(msg)
         if len(self.recent) > self.max_recent:
             self.recent.pop(0)
+
+
+    def _draw_crowd_cells(self):
+        """Draw the crowded cell, should be red circles"""
+        state = getattr(self.env, "current_state", {})
+        crowd_positions = state.get("crowd_positions", [])
+
+        for (x, y) in crowd_positions:
+            # safety: ensure within bounds
+            if not (0 <= x < self.env.grid_width and 0 <= y < self.env.grid_height):
+                continue
+
+            rect = self._cell_rect(x, y)
+            cx, cy = rect.center
+            radius = int(self.cell * 0.25)
+            pygame.draw.circle(self.screen, RED, (cx, cy), radius)
+
 
 
     def _draw_hover_label(self):
