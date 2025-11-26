@@ -241,44 +241,36 @@ class CampusEnv(gym.Env):
     def get_observation(self):
         player_position = self.current_state['position']
         px, py = player_position
+        crowd_positions = self.current_state['crowd_positions']
         layer = self.current_state['layer']
         current_map = self.surface_map if self.layer == 0 else self.tunnel_map
-        
         goal_building_code = BUILDINGS.get(self.goal_building)
-
-        # Build 3x3 window with information about each cell
-        window = {}
-        for dx in [-1, 0, 1]:
-            for dy in [-1, 0, 1]:
-                cell_x, cell_y = px + dx, py + dy
-                
-                # Check if cell is within bounds
-                if 0 <= cell_x < self.grid_width and 0 <= cell_y < self.grid_height:
-                    cell_value = current_map[cell_y, cell_x]
-                    
-                    # Get building code (0 if not a building, actual code 10-25 if it is)
-                    building_code = cell_value if cell_value in BUILDINGS.values() else 0
-                    
-                    # Check if it's a wall
-                    is_wall = 1 if cell_value == WALL else 0
-                    
-                    # Check if it's the toggle position
-                    can_toggle_layer = 1 if building_code in self.tunnel_map else 0
-
-                    # check if it's the goal position
-                    is_goal = 1 if cell_value == goal_building_code else 0
-                else:
-                    building_code = 0
-                    is_wall = 1
-                    can_toggle_layer = 0
-                    is_goal = 0
-                
-                window[(dx, dy)] = {
-                    'building_code': building_code, 
-                    'is_wall': is_wall,
-                    'can_toggle_layer': can_toggle_layer,
-                    'is_goal': is_goal
-                }
+        
+        current_building = 0
+        is_wall = 1
+        can_toggle_layer = 0
+        is_crowd = 0
+        is_goal = 0
+        
+        if 0 <= py < self.grid_height and 0 <= px < self.grid_width:
+            cell_value = current_map[py, px]
+            
+            # Get building code
+            current_building = cell_value if cell_value in BUILDINGS.values() else 0
+            
+            # Check if it's a wall
+            is_wall = 1 if cell_value == WALL else 0
+            
+            # Check if can toggle layer
+            if current_building > 0:
+                can_toggle_layer = 1 if current_building in self.tunnel_building_codes else 0
+            
+            # Check if the current position is in any of the 10 crowded positions
+            if (px, py) in crowd_positions:
+                is_crowd = 1
+            
+            # Check if at goal
+            is_goal = 1 if cell_value == goal_building_code else 0
         
         weather = self.current_state['weather']
         crowd = self.current_state['crowd']
@@ -288,10 +280,11 @@ class CampusEnv(gym.Env):
             'layer': layer,
             'weather': weather,
             'crowd': crowd,
-            'current_building': window[(0, 0)]['building_code'],
-            'is_wall': window[(0, 0)]['is_wall'],
-            'can_toggle_layer': window[(0, 0)]['can_toggle_layer'],
-            'is_goal': window[(0, 0)]['is_goal']
+            'current_building': current_building,
+            'is_wall': is_wall,
+            'can_toggle_layer': can_toggle_layer,
+            'is_crowd': is_crowd,
+            'is_goal': is_goal
         }
 
         return obs
