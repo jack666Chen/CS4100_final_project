@@ -341,8 +341,15 @@ class CampusEnv(gym.Env):
         return obs
 
     def is_terminal(self):
+        x, y = self.current_state["position"]
+        current_map = self.surface_map if self.current_state["layer"] == 0 else self.tunnel_map
+        if current_map[y, x] == self.goal_building_code:
+            return "goal"
+        if self.steps >= self.max_steps:
+            return "truncated"
         return False
-
+    
+    
     def move_player(self, action):
         return ""
 
