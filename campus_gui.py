@@ -28,13 +28,13 @@ KEY2ACTION_IDX = {
     pygame.K_s: 1,  # DOWN
     pygame.K_a: 2,  # LEFT
     pygame.K_d: 3,  # RIGHT
-    pygame.K_q: 5,
-    pygame.K_e: 6,
-    pygame.K_z: 7,
-    pygame.K_c: 8,
+    pygame.K_q: 4,  # UP - L
+    pygame.K_e: 5,  # UP - R
+    pygame.K_z: 6,  # DOWN - L
+    pygame.K_c: 7,  # Down - R
 
-    pygame.K_SPACE: 9,  # TOGGLE_LAYER
-    pygame.K_x: 10,  # WAIT
+    pygame.K_SPACE: 8,  # TOGGLE_LAYER
+    pygame.K_x: 9,  # WAIT
 }
 
 HELP_LINES = [

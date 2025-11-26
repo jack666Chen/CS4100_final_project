@@ -93,7 +93,7 @@ class CampusEnv(gym.Env):
         }
         
         # Actions
-        self.actions = ['UP', 'DOWN', 'LEFT', 'RIGHT', 'TOGGLE_LAYER', 'WAIT']
+        self.actions = ['UP', 'DOWN', 'LEFT', 'RIGHT','UP - L', 'UP - R', 'DOWN - L', 'DOWN - R', 'TOGGLE_LAYER', 'WAIT']
         self.action_space = spaces.Discrete(len(self.actions))
         
         # Observation space
@@ -305,10 +305,11 @@ class CampusEnv(gym.Env):
       return ""
     
     def step(self, actions):
-      observation = ""
-      reward = ""
-      done = ""
-      info = "" # empty strings are placeholders
+      '''This is still a placeholder just try to see if gui works correctly'''
+      observation = self.get_observation()
+      reward = 0.0
+      done = False
+      info = {} # empty strings are placeholders
       return observation, reward, done, info
     
     def render(self, mode='human'):
