@@ -361,10 +361,49 @@ class CampusEnv(gym.Env):
     
     
     def move_player(self, action):
-        return ""
+        x, y = self.current_state["position"]
+        directions = {
+            0: (x, y - 1),  # UP
+            1: (x, y + 1),  # DOWN
+            2: (x - 1, y),  # LEFT
+            3: (x + 1, y),  # RIGHT
+            4: (x - 1, y - 1),  # UP - L
+            5: (x + 1, y - 1),  # UP - R
+            6: (x - 1, y + 1),  # DOWN - L
+            7: (x + 1, y + 1),  # DOWN - R
+        }
+        new_position = directions.get(action, self.current_state["position"])
+        current_map = (
+            self.surface_map if self.current_state["layer"] == 0 else self.tunnel_map
+        )
 
-    def move_player_to_random_adjacent(self):
-        return ""
+        # Ensure new position is within bounds
+        if (
+            0 <= new_position[0] < self.grid_width
+            and 0 <= new_position[1] < self.grid_height
+        ):
+            if random.random() <= 0.99:
+                self.current_state["position"] = new_position
+            else:
+                # 1% chance to move to a random adjacent cell
+                adjacent_positions = [
+                    directions[act] for act in directions if act != action
+                ]
+                adjacent_positions = [
+                    pos
+                    for pos in adjacent_positions
+                    if 0 <= pos[0] < self.grid_width and 0 <= pos[1] < self.grid_height
+                ]
+                if adjacent_positions:
+                    self.current_state["position"] = random.choice(adjacent_positions)
+            new_x, new_y = self.current_state["position"]
+
+            if current_map[new_y, new_x] == WALL:
+                return "Hit and moved into wall!", self.rewards.get("enter_wall", -10)
+            else:
+                return f"Moved to {self.current_state['position']}", 0
+        else:
+            return "Out of bounds!", self.rewards.get("oob", -5)
 
     def move_crowd_random(self):
         """
@@ -413,18 +452,54 @@ class CampusEnv(gym.Env):
 
 
     def try_toggle_layer(self):
-        return ""
+        x, y = self.current_state["position"]
+        current_map = (
+            self.surface_map if self.current_state["layer"] == 0 else self.tunnel_map
+        )
+        cell_value = current_map[y, x]
+
+        if cell_value in BUILDINGS.values():
+            if cell_value in self.tunnel_building_codes:
+                # Toggle layer
+                self.current_state["layer"] = 1 - self.current_state["layer"]
+                return "Toggled layer successfully.", 0
+            else:
+                return "Building has no tunnel access.", self.rewards.get(
+                    "invalid_action", -20
+                )
+        else:
+            return "Not in a building.", self.rewards.get("invalid_action", -20)
 
     def play_turn(self, action):
-        return ""
+        if action in range(0, 8):  # Movement actions
+            return self.move_player(action)
+        elif action == 8:  # TOGGLE_LAYER
+            return self.try_toggle_layer()
+        elif action == 9:  # WAIT
+            return "Waited for a turn.", 0
+        else:
+            return "Invalid action.", self.rewards.get("invalid_action", -20)
 
     def step(self, action: int):
-        """This is still a placeholder just try to see if gui works correctly"""
-        observation = self.get_observation()
-        reward = 0.0
+        self.steps += 1
+        result, reward = self.play_turn(action)
+        terminal_status = self.is_terminal()
+
         done = False
-        info = {}  # empty strings are placeholders
+        if terminal_status == "goal":
+            reward += self.rewards.get("goal", 1000)
+            done = True
+        elif terminal_status == "truncated":
+            reward += self.rewards.get("timeout", -50)
+            done = True
+
+        observation = self.get_observation()
+        info = {
+            "result": result,
+            "action_taken": self.actions[action],
+            "truncated": done and terminal_status == "truncated",
+        }
         return observation, reward, done, info
 
     def render(self, mode="human"):
-        print("")
+        print(f"Current state: {self.current_state}")
