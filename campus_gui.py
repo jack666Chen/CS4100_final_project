@@ -47,7 +47,6 @@ HELP_LINES = [
     "",
     "  R = reset",
     "  G = toggle grid",
-    "  +/- = cell size, [ ] = FPS",
 ]
 
 LAYER_LABELS = {
@@ -278,24 +277,14 @@ class CampusGUI:
         layer_idx = self.obs.get('layer', 0)
         layer_name = LAYER_LABELS.get(layer_idx, f"Layer {layer_idx}")
 
-        w_idx = self.obs.get('weather', 0)
-        c_idx = self.obs.get('crowd', 0)
+        weather_name = self.obs.get('weather')
+        crowd_name = self.obs.get('crowd')
 
-        weather_name = "?"
-        crowd_name = "?"
-        try:
-            weather_name = self.env.weather_conditions[w_idx]
-        except Exception:
-            pass
-        try:
-            crowd_name = self.env.crowd_levels[c_idx]
-        except Exception:
-            pass
 
         at_goal = self.obs.get('at_goal', 0)
         at_goal_str = "YES" if at_goal else "no"
 
-        curr_bldg = self.obs.get('current_building', None)
+        curr_bldg = CODE2BUILDING.get(self.obs.get('current_building', None))
         if not curr_bldg:
             curr_bldg = "-"
 
@@ -411,8 +400,7 @@ def main():
     # You can parameterize goal_building or other env settings here.
     env = CampusEnv(goal_building='Snell Library')
 
-    # Once you finish CampusEnv.reset(), step(), etc., this GUI
-    # should work as-is. For now, it gives you the full structure.
+    # Once the campus env finished, this should work correctly
     gui = CampusGUI(env)
     gui.run()
 

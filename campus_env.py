@@ -236,7 +236,7 @@ class CampusEnv(gym.Env):
             
                 # For surface layer: exclude any buildings
                 if self.layer == 0:
-                    if cell_value not in BUILDINGS.values():
+                    if cell_value not in BUILDINGS.values() and cell_value != WALL:
                         valid_positions.append((x, y))
                 # For tunnel layer: exclude WALL and goal building
                 else:
