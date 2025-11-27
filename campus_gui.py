@@ -229,7 +229,8 @@ class CampusGUI:
         self._draw_agent()
         
         # draw the crowdsr
-        self._draw_crowd_cells()
+        if (self.obs.get('layer',0) == 0):
+            self._draw_crowd_cells()
 
         if self.show_grid:
             self._draw_grid()
