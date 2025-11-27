@@ -309,7 +309,6 @@ class CampusEnv(gym.Env):
         player_position = self.current_state['position']
         px, py = player_position
         crowd_positions = self.current_state['crowd_positions']
-
         layer = self.current_state['layer']
         current_map = self.surface_map if self.layer == 0 else self.tunnel_map
         
@@ -336,17 +335,21 @@ class CampusEnv(gym.Env):
                 can_toggle_layer = 1 if current_building in self.tunnel_building_codes else 0
             
             # Check if the current position is in the crowded positions
-            # and get the crowd level for this position (default to "low")
-            if (px, py) in crowd_positions:
-                is_crowd = 1
-                crowd = crowd_positions[(px, py)]
+            # Crowd only exists on surface layer (layer 0)
+            if layer == 0:
+                if (px, py) in crowd_positions:
+                    is_crowd = 1
+                    crowd = crowd_positions[(px, py)]
+                else:
+                    crowd = None
             else:
-                crowd = "low"
+                # On tunnel layer, no crowd
+                crowd = None
             
             # Check if at goal
             is_goal = 1 if cell_value == goal_building_code else 0
         else:
-            crowd = "low"
+            crowd = None
         
         weather = self.current_state['weather']
         time = self.current_state['time']
