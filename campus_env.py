@@ -568,6 +568,9 @@ class CampusEnv(gym.Env):
         elif action == 8:  # TOGGLE_LAYER
             return self.try_toggle_layer()
         elif action == 9:  # WAIT
+            # WAIT always costs 0.5 time, regardless of weather/crowd
+            self.time += 0.5
+            self.current_state["time"] = self.time
             return "Waited for a turn.", 0
         else:
             return "Invalid action.", self.rewards.get("invalid_action", -20)
