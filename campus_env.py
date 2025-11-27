@@ -590,7 +590,10 @@ class CampusEnv(gym.Env):
             reward += self.rewards.get("goal", 1000)
             done = True
         elif terminal_status == "truncated":
-            reward += self.rewards.get("timeout", -50)
+            reward += self.rewards.get("timeout", -500)
+            done = True
+        elif terminal_status == "timeout":
+            reward += self.rewards.get("timeout", -500)
             done = True
 
         observation = self.get_observation()
@@ -598,6 +601,7 @@ class CampusEnv(gym.Env):
             "result": result,
             "action_taken": self.actions[action],
             "truncated": done and terminal_status == "truncated",
+            "timeout": done and terminal_status == "timeout",
         }
         return observation, reward, done, info
 
