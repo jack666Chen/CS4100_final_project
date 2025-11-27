@@ -427,16 +427,19 @@ class CampusEnv(gym.Env):
     def move_crowd_random(self):
         """
         Move each crowd to a random adjacent position, and confirm that each crowd has a unique position.
-        Each crowd maintains its own crowd level when moving.
         """
-        current_map = self.surface_map if self.current_state['layer'] == 0 else self.tunnel_map
+        current_map = self.surface_map
         crowd_positions = self.current_state['crowd_positions']
         player_position = self.current_state['position']
+        player_layer = self.current_state['layer']
         
         new_crowd_positions = {}
-        # Include all old crowd positions and player position as occupied initially
-        occupied_positions = {player_position}
-        occupied_positions.update(crowd_positions.keys())
+        if player_layer == 0:
+            occupied_positions = {player_position}
+            for pos in crowd_positions.keys():
+                occupied_positions.add(pos)
+        else:
+            occupied_positions = {pos for pos in crowd_positions.keys()}
         
         for old_position, crowd_level in crowd_positions.items():
             x, y = old_position
@@ -450,9 +453,10 @@ class CampusEnv(gym.Env):
             
             # Remove old_position from occupied temporarily to allow staying in place
             # but exclude other occupied positions (other crowds' old positions and newly assigned positions)
+            occupied_without_old = {p for p in occupied_positions if p != old_position}
             available_positions = [
                 pos for pos in adjacent_positions
-                if pos not in (occupied_positions - {old_position})
+                if pos not in occupied_without_old
             ]
             
             if available_positions:
