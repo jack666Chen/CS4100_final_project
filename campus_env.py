@@ -140,7 +140,7 @@ class CampusEnv(gym.Env):
         self.max_steps = 1000
         self.steps = 0
 
-        self.max_time = 100
+        self.max_time = 400
         self.time = 0.0
 
         self.goal_building = goal_building
@@ -171,10 +171,11 @@ class CampusEnv(gym.Env):
         # Rewards
         self.rewards = {
             "goal": 1000,
-            "invalid_action": -20,
-            "timeout": -500, 
-            "enter_wrong_building": -10,
-            "toggle": 20,
+            "invalid_action": -2,
+            "timeout": -800, 
+            "enter_wrong_building": -3,
+            "toggle": 1,
+            "wet penalty": -4
         }
 
         # Actions
@@ -203,7 +204,7 @@ class CampusEnv(gym.Env):
             "DOWN - L": 1.414,
             "DOWN - R": 1.414,
             "TOGGLE_LAYER": 1.0,
-            "WAIT": 0.5,
+            "WAIT": 0.25,
         }
 
         # Observation space
@@ -457,25 +458,33 @@ class CampusEnv(gym.Env):
         
         # Out of bounds → penalty, stay in place, no time cost
         if not (0 <= cx < self.grid_width and 0 <= cy < self.grid_height):
-            return "Out of bounds!", self.rewards.get("invalid_action", -20)
+            return "Out of bounds!", self.rewards.get("invalid_action", -3)
 
         # Wall → penalty, stay in place, no time cost
         if current_map[cy, cx] == WALL:
-            return "Hit wall!", self.rewards.get("invalid_action", -20)
+            return "Hit wall!", self.rewards.get("invalid_action", -3)
         
         # Valid move - calculate and consume time
         x, y = self.current_state["position"]
-        cell_value = current_map[cy, cx]
+        cell_value = current_map[cy, cx]    
         time_cost = self.calculate_time_cost(cell_value, self.actions[action])
         self.time += time_cost
         self.current_state["time"] = self.time
         self.current_state["position"] = new_position
         
+        if (self.weather != "clear" and self.layer == 0):
+            if cell_value in BUILDINGS.values():
+                return "Avoid bad Weather", 1
+            return "You got wet", self.rewards.get("wet penalty", -4)
+        
+        if (self.weather != "clear" and self.layer == 1):
+            return "Avoid rain", 1
+
         # Check if entered a wrong building (not goal building) - only on surface layer
         if (self.current_state["layer"] == 0 and 
             cell_value in BUILDINGS.values() and 
             cell_value != self.goal_building_code):
-            return f"Entered wrong building at {new_position}", self.rewards.get("enter_wrong_building", -10)
+            return f"Entered wrong building at {new_position}", self.rewards.get("enter_wrong_building", -2)
                 
         return f"Moved to {self.current_state['position']}", 0
 
@@ -588,6 +597,7 @@ class CampusEnv(gym.Env):
         done = False
         if terminal_status == "goal":
             reward += self.rewards.get("goal", 1000)
+            reward += (self.max_time - self.time) * 2
             done = True
         elif terminal_status == "truncated":
             reward += self.rewards.get("timeout", -500)

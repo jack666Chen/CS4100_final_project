@@ -294,6 +294,7 @@ class CampusGUI:
         steps = getattr(self.env, "steps", 0)
         max_steps = getattr(self.env, "max_steps", 0)
         goal_building = getattr(self.env, "goal_building", "Snell Library")
+        time = round(self.obs.get('time'))
 
         lines = [
             f"Grid: {self.env.grid_width}x{self.env.grid_height} | FPS: {self.fps}",
@@ -302,6 +303,7 @@ class CampusGUI:
             f"Goal building: {goal_building}",
             f"At goal?: {at_goal_str}",
             f"Current building: {curr_bldg}",
+            f"Time: {time}",
             f"Steps: {steps}/{max_steps}",
             "",
         ] + HELP_LINES + ["", "Recent:"]
