@@ -1,6 +1,7 @@
 import sys
 import pygame
 import math
+import random
 
 from campus_env import CampusEnv, BUILDINGS, EMPTY, WALL, TUNNEL
 
@@ -56,7 +57,7 @@ LAYER_LABELS = {
     1: "Tunnel",
 }
 
-env = CampusEnv(goal_building='Snell Library')
+game = CampusEnv(goal_building='Snell Library')
 
 class CampusGUI:
     """
@@ -457,7 +458,7 @@ class CampusGUI:
 
 def main():
     # Once the campus env finished, this should work correctly
-    gui = CampusGUI(env)
+    gui = CampusGUI(game)
     gui.run()
 
 
