@@ -16,6 +16,7 @@ def hash_obs(obs):
         obs['layer'],
         obs['can_toggle_layer'],
         obs['nearest_crowd'][0],
-        bs['nearest_crowd'][1],
+        obs['nearest_crowd'][1],
     )
+
     return key

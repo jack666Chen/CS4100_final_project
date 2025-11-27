@@ -175,7 +175,8 @@ class CampusEnv(gym.Env):
             "timeout": -800, 
             "enter_wrong_building": -3,
             "toggle": 1,
-            "wet penalty": -4
+            "wet penalty": -4,
+            "crowd": -10,
         }
 
         # Actions
@@ -485,11 +486,15 @@ class CampusEnv(gym.Env):
         self.time += time_cost
         self.current_state["time"] = self.time
         self.current_state["position"] = new_position
+
+        crowd_penalty = 0
+        if (new_position in self.current_state['crowd_positions']):
+            crowd_penalty += self.rewards.get("crowd",-10)
         
         if (self.weather != "clear" and self.layer == 0):
             if cell_value in BUILDINGS.values():
                 return "Avoid bad Weather", 1
-            return "You got wet", self.rewards.get("wet penalty", -4)
+            return "You got wet", self.rewards.get("wet penalty", -4) + crowd_penalty
         
         if (self.weather != "clear" and self.layer == 1):
             return "Avoid rain", 1
@@ -498,9 +503,11 @@ class CampusEnv(gym.Env):
         if (self.current_state["layer"] == 0 and 
             cell_value in BUILDINGS.values() and 
             cell_value != self.goal_building_code):
-            return f"Entered wrong building at {new_position}", self.rewards.get("enter_wrong_building", -2)
+            return f"Entered wrong building at {new_position}", self.rewards.get("enter_wrong_building", -2) + crowd_penalty
+        
+        
                 
-        return f"Moved to {self.current_state['position']}", 0
+        return f"Moved to {self.current_state['position']}", 0 + crowd_penalty
 
 
     def move_crowd_random(self):
