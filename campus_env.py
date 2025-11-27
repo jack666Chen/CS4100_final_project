@@ -389,40 +389,34 @@ class CampusEnv(gym.Env):
             4: (x - 1, y - 1),  # UP - L
             5: (x + 1, y - 1),  # UP - R
             6: (x - 1, y + 1),  # DOWN - L
-            7: (x + 1, y + 1),  # DOWN - R
+            7: (x + 1, y + 1),  # DOWN - R,
         }
-        new_position = directions.get(action, self.current_state["position"])
-        current_map = (
-            self.surface_map if self.current_state["layer"] == 0 else self.tunnel_map
-        )
+        new_position = directions.get(action, (x, y))
 
-        # Ensure new position is within bounds
-        if (
-            0 <= new_position[0] < self.grid_width
-            and 0 <= new_position[1] < self.grid_height
-        ):
-            if random.random() <= 0.99:
-                self.current_state["position"] = new_position
-            else:
-                # 1% chance to move to a random adjacent cell
-                adjacent_positions = [
-                    directions[act] for act in directions if act != action
-                ]
-                adjacent_positions = [
-                    pos
-                    for pos in adjacent_positions
-                    if 0 <= pos[0] < self.grid_width and 0 <= pos[1] < self.grid_height
-                ]
-                if adjacent_positions:
-                    self.current_state["position"] = random.choice(adjacent_positions)
-            new_x, new_y = self.current_state["position"]
+        # 1% chance to slip to a random adjacent cell
+        if random.random() > 0.99:
+            adj = [
+                pos for act, pos in directions.items() if act != action
+                if 0 <= pos[0] < self.grid_width and 0 <= pos[1] < self.grid_height
+            ]
+            if adj:
+                new_position = random.choice(adj)
 
-            if current_map[new_y, new_x] == WALL:
-                return "Hit and moved into wall!", self.rewards.get("enter_wall", -10)
-            else:
-                return f"Moved to {self.current_state['position']}", 0
-        else:
-            return "Out of bounds!", self.rewards.get("oob", -5)
+        cx, cy = new_position
+        # Out of bounds → penalty, stay in place
+        if not (0 <= cx < self.grid_width and 0 <= cy < self.grid_height):
+            return "Out of bounds!", self.rewards.get("invalid_action", -20)
+
+        current_map = self.surface_map if self.current_state["layer"] == 0 else self.tunnel_map
+
+        # Wall → penalty, stay in place
+        if current_map[cy, cx] == WALL:
+            return "Hit wall!", self.rewards.get("invalid_action", -20)
+
+        # Valid move
+        self.current_state["position"] = new_position
+        return f"Moved to {self.current_state['position']}", 0
+
 
     def move_crowd_random(self):
         """
