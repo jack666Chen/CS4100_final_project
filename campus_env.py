@@ -270,15 +270,30 @@ class CampusEnv(gym.Env):
             crowd_positions = {}
         else:
             self.position = random.choice(valid_positions)
-            # Randomly select 10 unique crowded positions (no duplicates, excluding player position)
-            available_positions = [pos for pos in valid_positions if pos != self.position]
-            num_crowded = min(10, len(available_positions))
+        
+        # Crowd only exists on surface layer 
+        surface_valid_positions = []
+        for y in range(self.grid_height):
+            for x in range(self.grid_width):
+                cell_value = self.surface_map[y, x]
+                if cell_value != WALL and cell_value != goal_building_code:
+                    surface_valid_positions.append((x, y))
+        
+        if surface_valid_positions:
+            if self.layer == 0:
+                available_crowd_positions = [pos for pos in surface_valid_positions if pos != self.position]
+            else:
+                available_crowd_positions = surface_valid_positions
+            
+            num_crowded = min(10, len(available_crowd_positions))
             if num_crowded > 0:
-                selected_positions = random.sample(available_positions, num_crowded)
+                selected_positions = random.sample(available_crowd_positions, num_crowded)
                 # we assign a random crowd level to each selected position
                 crowd_positions = {pos: random.choice(self.crowd_levels) for pos in selected_positions}
             else:
                 crowd_positions = {}
+        else:
+            crowd_positions = {}
 
         self.current_state = {
             'time': self.time,
