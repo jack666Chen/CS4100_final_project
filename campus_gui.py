@@ -56,6 +56,7 @@ LAYER_LABELS = {
     1: "Tunnel",
 }
 
+env = CampusEnv(goal_building='Snell Library')
 
 class CampusGUI:
     """
@@ -455,9 +456,6 @@ class CampusGUI:
 
 
 def main():
-    # You can parameterize goal_building or other env settings here.
-    env = CampusEnv(goal_building='Snell Library')
-
     # Once the campus env finished, this should work correctly
     gui = CampusGUI(env)
     gui.run()
