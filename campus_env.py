@@ -192,6 +192,20 @@ class CampusEnv(gym.Env):
         ]
         self.action_space = spaces.Discrete(len(self.actions))
 
+        # Base time for different actions
+        self.action_base_times = {
+            "UP": 1.0,
+            "DOWN": 1.0,
+            "LEFT": 1.0,
+            "RIGHT": 1.0,
+            "UP - L": 1.414,  
+            "UP - R": 1.414,
+            "DOWN - L": 1.414,
+            "DOWN - R": 1.414,
+            "TOGGLE_LAYER": 1.0,
+            "WAIT": 0.5,
+        }
+
         # Observation space
         self.observation_space = spaces.Dict(
             {
