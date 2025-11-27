@@ -385,6 +385,38 @@ class CampusEnv(gym.Env):
 
         return obs
 
+    def calculate_time_cost(self, cell_value, action_name):
+        """
+        calculate the time cost for the action
+        """
+        # get the base time for the action
+        action_base_time = self.action_base_times.get(action_name)
+        
+        # for movement actions, consider the base traversal time of the cell
+        if action_name in ["UP", "DOWN", "LEFT", "RIGHT", "UP - L", "UP - R", "DOWN - L", "DOWN - R"]:
+            cell_base_time = BASE_TRAVERSAL_TIMES.get(cell_value)
+            base_time = action_base_time * cell_base_time
+        else:
+            # for toggle and wait, only use the base time of the action
+            base_time = action_base_time
+        
+        layer = self.current_state["layer"]
+        weather = self.current_state["weather"]
+        layer_name = "surface" if layer == 0 else "tunnel"
+        
+        weather_mult = self.weather_multipliers[layer_name][weather]
+        
+        x, y = self.current_state["position"]
+        crowd_positions = self.current_state["crowd_positions"]
+        if layer == 0 and (x, y) in crowd_positions:
+            crowd_level = crowd_positions[(x, y)]
+            crowd_mult = self.crowd_multipliers[layer_name][crowd_level]
+        else:
+            crowd_mult = 1.0
+        
+        time_cost = base_time * weather_mult * crowd_mult
+        return time_cost
+
     def is_terminal(self):
         x, y = self.current_state["position"]
         current_map = self.surface_map if self.current_state["layer"] == 0 else self.tunnel_map
