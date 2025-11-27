@@ -117,14 +117,14 @@ TUNNEL_BUILDING_ENTRANCES = [
 
 # Base traversal times (normalized 1-10 scale)
 BASE_TRAVERSAL_TIMES = {
-    EMPTY: 2.0,
+    EMPTY: 1.0,
     TUNNEL: 1.5,
     WALL: float("inf"),
 }
 
-# Buildings are accessible waypoints with entry/exit cost
+# Base traversal times for buildings (normalized 1-10 scale)
 for building_code in BUILDINGS.values():
-    BASE_TRAVERSAL_TIMES[building_code] = 0.5
+    BASE_TRAVERSAL_TIMES[building_code] = 2.0
 
 
 class CampusEnv(gym.Env):
