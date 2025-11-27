@@ -453,18 +453,30 @@ class CampusEnv(gym.Env):
                 new_position = random.choice(adj)
 
         cx, cy = new_position
-        # Out of bounds → penalty, stay in place
+        current_map = self.surface_map if self.current_state["layer"] == 0 else self.tunnel_map
+        
+        # Out of bounds → penalty, stay in place, no time cost
         if not (0 <= cx < self.grid_width and 0 <= cy < self.grid_height):
             return "Out of bounds!", self.rewards.get("invalid_action", -20)
 
-        current_map = self.surface_map if self.current_state["layer"] == 0 else self.tunnel_map
-
-        # Wall → penalty, stay in place
+        # Wall → penalty, stay in place, no time cost
         if current_map[cy, cx] == WALL:
             return "Hit wall!", self.rewards.get("invalid_action", -20)
-
-        # Valid move
+        
+        # Valid move - calculate and consume time
+        x, y = self.current_state["position"]
+        cell_value = current_map[cy, cx]
+        time_cost = self.calculate_time_cost(cell_value, self.actions[action])
+        self.time += time_cost
+        self.current_state["time"] = self.time
         self.current_state["position"] = new_position
+        
+        # Check if entered a wrong building (not goal building) - only on surface layer
+        if (self.current_state["layer"] == 0 and 
+            cell_value in BUILDINGS.values() and 
+            cell_value != self.goal_building_code):
+            return f"Entered wrong building at {new_position}", self.rewards.get("enter_wrong_building", -10)
+                
         return f"Moved to {self.current_state['position']}", 0
 
 
