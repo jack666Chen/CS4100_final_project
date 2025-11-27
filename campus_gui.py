@@ -305,6 +305,7 @@ class CampusGUI:
             f"Current building: {curr_bldg}",
             f"Time: {time}",
             f"Steps: {steps}/{max_steps}",
+            f"Nearest crowd: {self.obs.get('nearest_crowd')}"
             "",
         ] + HELP_LINES + ["", "Recent:"]
 

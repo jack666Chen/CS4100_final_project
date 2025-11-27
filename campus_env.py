@@ -371,6 +371,19 @@ class CampusEnv(gym.Env):
         weather = self.current_state['weather']
         time = self.current_state['time']
 
+        if layer == 0 and crowd_positions:
+            # list of (distance, (cx, cy))
+            dists = [
+                (abs(px - cx) + abs(py - cy), (cx, cy))
+                for (cx, cy) in crowd_positions.keys()
+            ]
+            nearest_dist, nearest_pos = min(dists, key=lambda t: t[0])
+            nearest_crowd_pos = nearest_pos
+        else:
+            # No crowd on this layer or no crowds at all
+            # set to -1 for hash simplicity
+            nearest_crowd_pos = (-1,-1)
+
         obs = {
             'position': (px, py),
             'layer': layer,
@@ -381,7 +394,8 @@ class CampusEnv(gym.Env):
             'is_wall': is_wall,
             'can_toggle_layer': can_toggle_layer,
             'is_goal': is_goal,
-            'time': time
+            'time': time,
+            'nearest_crowd': nearest_crowd_pos
         }
 
         return obs
