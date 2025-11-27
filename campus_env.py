@@ -424,6 +424,8 @@ class CampusEnv(gym.Env):
             return "goal"
         if self.steps >= self.max_steps:
             return "truncated"
+        if self.time >= self.max_time:
+            return "timeout"
         return False
     
     
