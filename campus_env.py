@@ -172,7 +172,9 @@ class CampusEnv(gym.Env):
         self.rewards = {
             "goal": 1000,
             "invalid_action": -20,
-            "timeout": -50,
+            "timeout": -500, 
+            "enter_wrong_building": -10,
+            "toggle": 20,
         }
 
         # Actions
