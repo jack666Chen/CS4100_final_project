@@ -502,6 +502,11 @@ class CampusEnv(gym.Env):
     def step(self, action: int):
         self.steps += 1
         result, reward = self.play_turn(action)
+
+        # Move crowd every 3 step the agent move
+        if (self.steps % 3 == 0):
+            self.move_crowd_random()
+
         terminal_status = self.is_terminal()
 
         done = False
