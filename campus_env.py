@@ -537,19 +537,30 @@ class CampusEnv(gym.Env):
         )
         cell_value = current_map[y, x]
 
-        if cell_value in BUILDINGS.values():
-            if cell_value in self.tunnel_building_codes:
-                # Toggle layer
-                new_layer = 1 - self.current_state["layer"]
-                self.current_state["layer"] = new_layer
-                self.layer = new_layer
-                return "Toggled layer successfully.", 0
-            else:
-                return "Building has no tunnel access.", self.rewards.get(
-                    "invalid_action", -20
-                )
-        else:
+        # Check if toggle is valid first
+        if cell_value not in BUILDINGS.values():
             return "Not in a building.", self.rewards.get("invalid_action", -20)
+        
+        if cell_value not in self.tunnel_building_codes:
+            return "Building has no tunnel access.", self.rewards.get(
+                "invalid_action", -20
+            )
+        
+        # Valid toggle - calculate and consume time
+        old_layer = self.current_state["layer"]
+        time_cost = self.calculate_time_cost(cell_value, "TOGGLE_LAYER")
+        self.time += time_cost
+        self.current_state["time"] = self.time
+        
+        # Toggle layer
+        new_layer = 1 - old_layer
+        self.current_state["layer"] = new_layer
+        self.layer = new_layer
+        
+        # Give reward when successfully toggling from surface to tunnel
+        if old_layer == 0 and new_layer == 1:
+            return "Toggled layer successfully from surface to tunnel.", self.rewards.get("toggle", 20)
+        return "Toggled layer successfully from tunnel to surface.", 0
 
     def play_turn(self, action):
         if action in range(0, 8):  # Movement actions
