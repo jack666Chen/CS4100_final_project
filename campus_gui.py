@@ -464,3 +464,36 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+_gui_instance = None
+
+def refresh(obs, reward, done, info, delay=0.1):
+    """
+    Draw a single frame of the GUI for the current env state.
+
+    Called from Q_learning.py during training/eval when gui_flag is True.
+    """
+    global _gui_instance
+
+    # Lazy-create a GUI wrapper around the shared global env `game`
+    if _gui_instance is None:
+        _gui_instance = CampusGUI(game)
+
+    # Get events so the window stays responsive and can be close
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+
+    # Update the GUI's observation to what Q-learning just got
+    _gui_instance.obs = obs
+
+    # DDraw Frame
+    _gui_instance.screen.fill(WHITE)
+    _gui_instance._draw_map()
+    end_text = "Episode finished." if done else None
+    _gui_instance._draw_console(end_text)
+    pygame.display.flip()
+
+    # Speed Controller
+    _gui_instance.clock.tick(int(1 / max(delay, 1e-3)))

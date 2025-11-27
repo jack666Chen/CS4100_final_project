@@ -164,6 +164,8 @@ if not train_flag:
             #     refresh(
             #         obs, reward, done, info, delay=0.1
             #     )  # Update the game screen [GUI only]
+            if gui_flag:
+                refresh(obs, reward, done, info, delay=0.1)
 
         # print("Total reward:", total_reward)
         rewards.append(total_reward)
