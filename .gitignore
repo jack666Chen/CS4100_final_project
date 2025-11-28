@@ -6,3 +6,9 @@ training_plot_*episodes_*_decay.png
 crowd_contact_ratio_over_episodes.png
 
 *.pickle
+
+.DS_Store
+
+crowd_contact*
+
+Presentation Resources/
