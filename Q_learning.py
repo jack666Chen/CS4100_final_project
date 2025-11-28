@@ -32,15 +32,27 @@ def Q_learning(num_episodes=10000, gamma=0.9, epsilon=1, decay_rate=0.999):
     Q_table = {}
     num_updates = defaultdict(lambda: np.zeros(env.action_space.n))
     rewards = []
+    episodes = []
+    crowd_ratios = []
     
     for episode in tqdm(range(num_episodes)):
         total_reward = 0
         obs, reward, done, info = env.reset()
         
         total_reward += reward
+
+        # Track crowd for this episode
+        episode_steps = 0
+        crowd_steps = 0
         
         while not done:
             state = hash_obs(obs)
+
+            # Check if agent is in crowd
+            if obs.get('is_crowd', 0) == 1:
+                crowd_steps += 1
+            episode_steps += 1
+            
             if state not in Q_table.keys():
                 Q_table[state] = np.zeros(env.action_space.n)
 
@@ -65,6 +77,14 @@ def Q_learning(num_episodes=10000, gamma=0.9, epsilon=1, decay_rate=0.999):
             # Update Q value for current (state, action, reward, next state) as well as number of updates
             Q_table[state][action] = (1 - eta) * Q_old + eta * (reward + (gamma * V_old))
             num_updates[state][action] += 1
+            
+        # Calculate crowd contact ratio for this episode
+        if episode_steps > 0:
+            crowd_ratio = crowd_steps / episode_steps
+        else:
+            crowd_ratio = 0
+        crowd_ratios.append(crowd_ratio)
+        
         # decay epsilon after each episode    
         epsilon *= decay_rate
         rewards.append((episode, total_reward))
@@ -86,6 +106,28 @@ def Q_learning(num_episodes=10000, gamma=0.9, epsilon=1, decay_rate=0.999):
 
     plt.tight_layout()
     plt.savefig(f"training_plot_{num_episodes}episodes_{decay_rate}_decay.png", dpi=300,)
+
+    # Generate crowd contact ratio plot
+    crowd_x = episodes
+    crowd_y = crowd_ratios
+    avg_crowd_ratios = np.cumsum(crowd_y) / np.arange(1, len(crowd_y) + 1)
+    
+    max_crowd = max(crowd_y) if crowd_y else 0
+    plt.figure(figsize=(10, 6), dpi=300)
+    plt.plot(crowd_x, crowd_y, alpha=0.3, color='blue', label='Episode Crowd Ratio', linewidth=0.5)
+    plt.plot(crowd_x, avg_crowd_ratios, color='red', label='Average Crowd Ratio', linewidth=2)
+    plt.xlabel('Episode', fontsize=14, fontweight='bold')
+    plt.ylabel('Crowd Contact Ratio', fontsize=14, fontweight='bold')
+    plt.title('Agent Crowd Contact Ratio Over Training Episodes', fontsize=16, fontweight='bold', pad=20)
+    plt.grid(True, linestyle='--', alpha=0.3)
+    plt.legend(fontsize=12)
+    if max_crowd > 0:
+        plt.ylim([0, max_crowd * 1.1])
+    else:
+        plt.ylim([0, 0.1])
+    plt.tight_layout()
+    plt.savefig('crowd_contact_ratio_over_episodes.png', dpi=300, bbox_inches='tight')
+    print("Crowd contact ratio plot saved as 'crowd_contact_ratio_over_episodes.png'")
     
     return Q_table
             
@@ -136,13 +178,35 @@ if not train_flag:
     new_states_reached = []
     actions_from_q_table = 0
     actions_from_random = 0
+
+    # Data collection
+    weather_conditions = ["clear", "rain", "snow"]
+    layer_usage_data = {}
+    toggle_usage_data = {}
+    time_data = {}
+    for weather in weather_conditions:
+        layer_usage_data[weather] = {"total": 0, "tunnel": 0}
+        toggle_usage_data[weather] = {"can_toggle_opportunities": 0, "toggle_choices": 0}
+        time_data[weather] = []
+    
     for episode in tqdm(range(10000)):
         obs, reward, done, info = env.reset()
         total_reward = 0
         episode_len = 0
+        weather = obs['weather']
 
         while not done:
             state = hash_obs(obs)
+            # Collect layer usage data
+            if weather in layer_usage_data:
+                layer_usage_data[weather]["total"] += 1
+                if obs['layer'] == 1:  # tunnel
+                    layer_usage_data[weather]["tunnel"] += 1
+            
+            # Check if agent is at a toggle building before action
+            can_toggle = obs.get('can_toggle_layer', 0)
+            current_layer = obs.get('layer', 0) 
+            
             if state not in Q_table and state not in new_states_reached:
                 new_states_reached.append(state)
             try:
@@ -155,6 +219,13 @@ if not train_flag:
                     env.action_space.sample()
                 )  # Fallback to random action if state not in Q-table
                 actions_from_random += 1
+
+            # Collect toggle choice data
+            # Only count toggles from surface (layer 0) to tunnel (layer 1)
+            if weather in toggle_usage_data and can_toggle == 1 and current_layer == 0:
+                toggle_usage_data[weather]["can_toggle_opportunities"] += 1
+                if action == 8:  # TOGGLE_LAYER action
+                    toggle_usage_data[weather]["toggle_choices"] += 1
             
             obs, reward, done, info = env.step(action)
 
@@ -167,6 +238,11 @@ if not train_flag:
             if gui_flag:
                 refresh(obs, reward, done, info, delay=0.1)
 
+        # Collect final time for this episode
+        final_time = obs.get('time', 0)
+        if weather in time_data:
+            time_data[weather].append(final_time)
+            
         # print("Total reward:", total_reward)
         rewards.append(total_reward)
         len_episodes.append(episode_len)
@@ -195,3 +271,132 @@ if not train_flag:
     
     # Percentage of actions taken from randomly vs total actions taken
     print(f"Percentage of actions taken randomly vs total actions taken: {actions_from_random / (actions_from_q_table + actions_from_random)}")
+
+    # Visualize data to analysis agent performance
+    # Generate layer usage visualization
+    weather_labels = ["Clear", "Rain", "Snow"]
+    fig, ax = plt.subplots(figsize=(10, 6))
+    
+    x = np.arange(3)
+    width = 0.6
+    
+    tunnel_values = []
+    for weather in weather_conditions:
+        total = layer_usage_data[weather]["total"]
+        if total > 0:
+            tunnel_ratio = layer_usage_data[weather]["tunnel"] / total
+        else:
+            tunnel_ratio = 0
+        tunnel_values.append(tunnel_ratio)
+    
+    surface_values = [1 - v for v in tunnel_values]
+    
+    ax.bar(x, tunnel_values, width, label='Tunnel', color='red', 
+    alpha=0.8, edgecolor='black', linewidth=1.5)
+    ax.bar(x, surface_values, width, bottom=tunnel_values, label='Surface', color='blue',
+     alpha=0.8, edgecolor='black', linewidth=1.5)
+    
+    for i in range(3):
+        t_val = tunnel_values[i]
+        s_val = surface_values[i]
+        if t_val > 0.05:
+            ax.text(i, t_val / 2, f'{t_val:.2%}', ha='center', va='center', fontweight='bold', fontsize=11, color='white')
+        if s_val > 0.05:
+            ax.text(i, t_val + s_val / 2, f'{s_val:.2%}', ha='center', va='center', fontweight='bold', fontsize=11, color='black')
+    
+    ax.set_ylabel('Usage Rate', fontsize=14, fontweight='bold')
+    ax.set_xlabel('Weather Condition', fontsize=14, fontweight='bold')
+    ax.set_title('Surface vs Tunnel Usage Rate Comparison Across Weather Conditions', fontsize=16, fontweight='bold', pad=20)
+    ax.set_xticks(x)
+    ax.set_xticklabels(weather_labels, fontsize=12)
+    ax.legend(loc='upper right', fontsize=12, framealpha=0.9)
+    ax.set_ylim([0, 1])
+    ax.grid(axis='y', alpha=0.3, linestyle='--', linewidth=0.8)
+    ax.set_axisbelow(True)
+    
+    plt.tight_layout()
+    plt.savefig('layer_usage_comparison.png', dpi=300, bbox_inches='tight')
+    print("Layer usage comparison chart saved as 'layer_usage_comparison.png'")
+    
+    # Generate toggle probability visualization
+    weather_labels = ["Clear", "Rain", "Snow"]
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    x = np.arange(3)
+    width = 0.6
+    
+    toggle_probabilities = []
+    for weather in weather_conditions:
+        opportunities = toggle_usage_data[weather]["can_toggle_opportunities"]
+        toggle_choices = toggle_usage_data[weather]["toggle_choices"]
+        if opportunities > 0:
+            probability = toggle_choices / opportunities
+        else:
+            probability = 0
+        toggle_probabilities.append(probability)
+    
+    colors = ['lightgreen', 'skyblue', 'lightgray']
+    
+    bars = ax.bar(x, toggle_probabilities, width, color=colors, alpha=0.8, edgecolor='black', linewidth=1.5)
+    
+    for i in range(3):
+        val = toggle_probabilities[i]
+        if val > 0.001: 
+            ax.text(i, val + max(toggle_probabilities) * 0.02, f'{val:.4f}', 
+                   ha='center', va='bottom', fontweight='bold', fontsize=11)
+    
+    ax.set_ylabel('Toggle Probability', fontsize=14, fontweight='bold')
+    ax.set_xlabel('Weather Condition', fontsize=14, fontweight='bold')
+    ax.set_title('TOGGLE_LAYER Probability at Toggle Buildings Across Weather Conditions', fontsize=16, fontweight='bold', pad=20)
+    ax.set_xticks(x)
+    ax.set_xticklabels(weather_labels, fontsize=12)
+    ax.grid(axis='y', alpha=0.3, linestyle='--', linewidth=0.8)
+    ax.set_axisbelow(True)
+    
+    max_prob = max(toggle_probabilities) if toggle_probabilities else 0.01
+    ax.set_ylim([0, max_prob * 1.2])
+    
+    plt.tight_layout()
+    plt.savefig('toggle_probability_comparison.png', dpi=300, bbox_inches='tight')
+    print("Toggle probability comparison chart saved as 'toggle_probability_comparison.png'")
+    
+    # Generate average time comparison
+    weather_labels = ["Clear", "Rain", "Snow"]
+    fig, ax = plt.subplots(figsize=(10, 6))
+    
+    avg_times = []
+    for weather in weather_conditions:
+        times = time_data[weather]
+        if len(times) > 0:
+            avg_time = np.mean(times)
+        else:
+            avg_time = 0
+        avg_times.append(avg_time)
+    
+    x = np.arange(3)
+    width = 0.6
+    colors = ['lightgreen', 'skyblue', 'lightgray']
+    
+    bars = ax.bar(x, avg_times, width, color=colors, alpha=0.8, edgecolor='black', linewidth=1.5)
+    
+    for i in range(3):
+        val = avg_times[i]
+        if val > 0:
+            ax.text(i, val + max(avg_times) * 0.02, f'{val:.2f}', 
+                   ha='center', va='bottom', fontweight='bold', fontsize=11)
+    
+    ax.set_ylabel('Average Time', fontsize=14, fontweight='bold')
+    ax.set_xlabel('Weather Condition', fontsize=14, fontweight='bold')
+    ax.set_title('Average Completion Time Across Weather Conditions', fontsize=16, fontweight='bold', pad=20)
+    ax.set_xticks(x)
+    ax.set_xticklabels(weather_labels, fontsize=12)
+    ax.grid(axis='y', alpha=0.3, linestyle='--', linewidth=0.8)
+    ax.set_axisbelow(True)
+    
+    max_time = max(avg_times) if avg_times else 100
+    ax.set_ylim([0, max_time * 1.2])
+    
+    plt.tight_layout()
+    plt.savefig('average_time_comparison.png', dpi=300, bbox_inches='tight')
+    print("Average time comparison chart saved as 'average_time_comparison.png'")
+    
