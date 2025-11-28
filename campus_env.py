@@ -171,11 +171,13 @@ class CampusEnv(gym.Env):
         # Rewards
         self.rewards = {
             "goal": 1000,
-            "invalid_action": -2,
+            "invalid_action": -5,
             "timeout": -800, 
             "enter_wrong_building": -3,
-            "toggle": 1,
-            "wet penalty": -4,
+            "toggle": 20,
+            "rain_penalty": -4,
+            "snow_penalty": -5,
+            "bad_movement": -5,
             "crowd": -10,
         }
 
@@ -429,6 +431,10 @@ class CampusEnv(gym.Env):
             crowd_mult = self.crowd_multipliers[layer_name][crowd_level]
         else:
             crowd_mult = 1.0
+
+        if (cell_value in BUILDINGS.values()):
+            time_cost = base_time * crowd_mult
+            return time_cost
         
         time_cost = base_time * weather_mult * crowd_mult
         return time_cost
@@ -473,11 +479,11 @@ class CampusEnv(gym.Env):
         
         # Out of bounds → penalty, stay in place, no time cost
         if not (0 <= cx < self.grid_width and 0 <= cy < self.grid_height):
-            return "Out of bounds!", self.rewards.get("invalid_action", -3)
+            return "Out of bounds!", self.rewards.get("invalid_action", -5)
 
         # Wall → penalty, stay in place, no time cost
         if current_map[cy, cx] == WALL:
-            return "Hit wall!", self.rewards.get("invalid_action", -3)
+            return "Hit wall!", self.rewards.get("invalid_action", -5)
         
         # Valid move - calculate and consume time
         x, y = self.current_state["position"]
@@ -488,22 +494,28 @@ class CampusEnv(gym.Env):
         self.current_state["position"] = new_position
 
         crowd_penalty = 0
-        if (new_position in self.current_state['crowd_positions']):
+        if (new_position in self.current_state['crowd_positions'] and self.layer == 0):
             crowd_penalty += self.rewards.get("crowd",-10)
         
         if (self.weather != "clear" and self.layer == 0):
             if cell_value in BUILDINGS.values():
-                return "Avoid bad Weather", 1
-            return "You got wet", self.rewards.get("wet penalty", -4) + crowd_penalty
+                return "Avoid bad Weather", 0
+            elif (self.weather == "rain"):
+                return "You got wet", self.rewards.get("rain_penalty", -4) + crowd_penalty
+            elif (self.weather == "snow"):
+                return "You got snowed", self.rewards.get("snow_penalty", -5) + crowd_penalty
         
         if (self.weather != "clear" and self.layer == 1):
             return "Avoid rain", 1
+
+        if (self.weather == "clear" and self.layer == 1):
+            return "Avoid bad movement in tunnel when weather is clear", self.rewards.get("bad_movement", -5) + crowd_penalty
 
         # Check if entered a wrong building (not goal building) - only on surface layer
         if (self.current_state["layer"] == 0 and 
             cell_value in BUILDINGS.values() and 
             cell_value != self.goal_building_code):
-            return f"Entered wrong building at {new_position}", self.rewards.get("enter_wrong_building", -2) + crowd_penalty
+            return f"Entered wrong building at {new_position}", self.rewards.get("enter_wrong_building", -3) + crowd_penalty
         
         
                 
@@ -587,8 +599,8 @@ class CampusEnv(gym.Env):
         self.current_state["layer"] = new_layer
         self.layer = new_layer
         
-        # Give reward when successfully toggling from surface to tunnel
-        if old_layer == 0 and new_layer == 1:
+        # Give reward when successfully toggling from surface to tunnel when the weather is bad
+        if old_layer == 0 and new_layer == 1 and self.weather != "clear":
             return "Toggled layer successfully from surface to tunnel.", self.rewards.get("toggle", 20)
         return "Toggled layer successfully from tunnel to surface.", 0
 
