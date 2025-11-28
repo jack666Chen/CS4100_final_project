@@ -382,7 +382,7 @@ if not train_flag:
     
     for i in range(3):
         val = avg_times[i]
-        ax.text(i, val + max(avg_times) * 1.05, f'{val:.2f}', ha='center', va='bottom', fontweight='bold', fontsize=11)
+        ax.text(i, val * 1.05, f'{val:.2f}', ha='center', va='bottom', fontweight='bold', fontsize=11)
     
     ax.set_ylabel('Average Time', fontsize=14, fontweight='bold')
     ax.set_xlabel('Weather Condition', fontsize=14, fontweight='bold')
