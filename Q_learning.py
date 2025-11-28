@@ -119,7 +119,7 @@ def Q_learning(num_episodes=10000, gamma=0.9, epsilon=1, decay_rate=0.999):
     plt.xlabel('Episode', fontsize=14, fontweight='bold')
     plt.ylabel('Crowd Contact Ratio', fontsize=14, fontweight='bold')
     plt.title('Agent Crowd Contact Ratio Over Training Episodes', fontsize=16, fontweight='bold', pad=20)
-    plt.grid(True, linestyle='--', alpha=0.3)
+    plt.grid(True, alpha=0.3)
     plt.legend(fontsize=12)
     if max_crowd > 0:
         plt.ylim([0, max_crowd * 1.1])
@@ -185,7 +185,7 @@ if not train_flag:
     toggle_usage_data = {}
     time_data = {}
     for weather in weather_conditions:
-        layer_usage_data[weather] = {"total": 0, "tunnel": 0}
+        layer_usage_data[weather] = {"surface": 0, "tunnel": 0}
         toggle_usage_data[weather] = {"can_toggle_opportunities": 0, "toggle_choices": 0}
         time_data[weather] = []
     
@@ -199,8 +199,9 @@ if not train_flag:
             state = hash_obs(obs)
             # Collect layer usage data
             if weather in layer_usage_data:
-                layer_usage_data[weather]["total"] += 1
-                if obs['layer'] == 1:  # tunnel
+                if obs['layer'] == 0:
+                    layer_usage_data[weather]["surface"] += 1
+                else:
                     layer_usage_data[weather]["tunnel"] += 1
             
             # Check if agent is at a toggle building before action
@@ -281,28 +282,30 @@ if not train_flag:
     width = 0.6
     
     tunnel_values = []
+    surface_values = []
     for weather in weather_conditions:
-        total = layer_usage_data[weather]["total"]
+        surface_count = layer_usage_data[weather]["surface"]
+        tunnel_count = layer_usage_data[weather]["tunnel"]
+        total = surface_count + tunnel_count
         if total > 0:
-            tunnel_ratio = layer_usage_data[weather]["tunnel"] / total
+            tunnel_ratio = tunnel_count / total
+            surface_ratio = surface_count / total
         else:
             tunnel_ratio = 0
+            surface_ratio = 0
         tunnel_values.append(tunnel_ratio)
-    
-    surface_values = [1 - v for v in tunnel_values]
+        surface_values.append(surface_ratio)
     
     ax.bar(x, tunnel_values, width, label='Tunnel', color='red', 
     alpha=0.8, edgecolor='black', linewidth=1.5)
     ax.bar(x, surface_values, width, bottom=tunnel_values, label='Surface', color='blue',
-     alpha=0.8, edgecolor='black', linewidth=1.5)
+    alpha=0.8, edgecolor='black', linewidth=1.5)
     
     for i in range(3):
         t_val = tunnel_values[i]
         s_val = surface_values[i]
-        if t_val > 0.05:
-            ax.text(i, t_val / 2, f'{t_val:.2%}', ha='center', va='center', fontweight='bold', fontsize=11, color='white')
-        if s_val > 0.05:
-            ax.text(i, t_val + s_val / 2, f'{s_val:.2%}', ha='center', va='center', fontweight='bold', fontsize=11, color='black')
+        ax.text(i, t_val / 2, f'{t_val:.2%}', ha='center', va='center', fontweight='bold', fontsize=11, color='white')
+        ax.text(i, t_val + s_val / 2, f'{s_val:.2%}', ha='center', va='center', fontweight='bold', fontsize=11, color='black')
     
     ax.set_ylabel('Usage Rate', fontsize=14, fontweight='bold')
     ax.set_xlabel('Weather Condition', fontsize=14, fontweight='bold')
@@ -341,9 +344,7 @@ if not train_flag:
     
     for i in range(3):
         val = toggle_probabilities[i]
-        if val > 0.001: 
-            ax.text(i, val + max(toggle_probabilities) * 0.02, f'{val:.4f}', 
-                   ha='center', va='bottom', fontweight='bold', fontsize=11)
+        ax.text(i, val * 1.05, f'{val:.4f}', ha='center', va='bottom', fontweight='bold', fontsize=11)
     
     ax.set_ylabel('Toggle Probability', fontsize=14, fontweight='bold')
     ax.set_xlabel('Weather Condition', fontsize=14, fontweight='bold')
@@ -381,9 +382,7 @@ if not train_flag:
     
     for i in range(3):
         val = avg_times[i]
-        if val > 0:
-            ax.text(i, val + max(avg_times) * 0.02, f'{val:.2f}', 
-                   ha='center', va='bottom', fontweight='bold', fontsize=11)
+        ax.text(i, val + max(avg_times) * 1.05, f'{val:.2f}', ha='center', va='bottom', fontweight='bold', fontsize=11)
     
     ax.set_ylabel('Average Time', fontsize=14, fontweight='bold')
     ax.set_xlabel('Weather Condition', fontsize=14, fontweight='bold')
