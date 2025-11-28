@@ -108,7 +108,7 @@ def Q_learning(num_episodes=10000, gamma=0.9, epsilon=1, decay_rate=0.999):
     plt.savefig(f"training_plot_{num_episodes}episodes_{decay_rate}_decay.png", dpi=300,)
 
     # Generate crowd contact ratio plot
-    crowd_x = episodes
+    crowd_x = x
     crowd_y = crowd_ratios
     avg_crowd_ratios = np.cumsum(crowd_y) / np.arange(1, len(crowd_y) + 1)
     
