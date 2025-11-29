@@ -174,7 +174,7 @@ class CampusEnv(gym.Env):
             "invalid_action": -5,
             "timeout": -800, 
             "enter_wrong_building": -3,
-            "toggle": 20,
+            "toggle": 300,
             "rain_penalty": -4,
             "snow_penalty": -5,
             "bad_movement": -5,
@@ -601,7 +601,7 @@ class CampusEnv(gym.Env):
         
         # Give reward when successfully toggling from surface to tunnel when the weather is bad
         if old_layer == 0 and new_layer == 1 and self.weather != "clear":
-            return "Toggled layer successfully from surface to tunnel.", self.rewards.get("toggle", 20)
+            return "Toggled layer successfully from surface to tunnel.", self.rewards.get("toggle", 300)
         return "Toggled layer successfully from tunnel to surface.", 0
 
     def play_turn(self, action):
@@ -633,10 +633,10 @@ class CampusEnv(gym.Env):
             reward += (self.max_time - self.time) * 2
             done = True
         elif terminal_status == "truncated":
-            reward += self.rewards.get("timeout", -500)
+            reward += self.rewards.get("timeout", -800)
             done = True
         elif terminal_status == "timeout":
-            reward += self.rewards.get("timeout", -500)
+            reward += self.rewards.get("timeout", -800)
             done = True
 
         observation = self.get_observation()
