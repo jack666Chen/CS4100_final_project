@@ -506,7 +506,7 @@ class CampusEnv(gym.Env):
                 return "You got snowed", self.rewards.get("snow_penalty", -5) + crowd_penalty
         
         if (self.weather != "clear" and self.layer == 1):
-            return "Avoid rain", 1
+            return "Avoid rain", 10
 
         if (self.weather == "clear" and self.layer == 1):
             return "Avoid bad movement in tunnel when weather is clear", self.rewards.get("bad_movement", -5) + crowd_penalty
@@ -599,9 +599,12 @@ class CampusEnv(gym.Env):
         self.current_state["layer"] = new_layer
         self.layer = new_layer
         
-        # Give reward when successfully toggling from surface to tunnel when the weather is bad
         if old_layer == 0 and new_layer == 1 and self.weather != "clear":
-            return "Toggled layer successfully from surface to tunnel.", self.rewards.get("toggle", 300)
+            return "Toggled layer successfully from surface to tunnel.", self.rewards.get("toggle", 350)
+        elif old_layer == 1 and new_layer == 0 and self.weather != "clear":
+            return "Toggled layer successfully from tunnel to surface.", self.rewards.get("toggle", 350) * -1 - 50
+        elif old_layer == 0 and new_layer == 1 and self.weather == "clear":
+            return "Toggled layer successfully from tunnel to surface.", self.rewards.get("toggle", 350) * -1 - 50
         return "Toggled layer successfully from tunnel to surface.", 0
 
     def play_turn(self, action):
