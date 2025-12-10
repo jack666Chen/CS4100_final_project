@@ -107,3 +107,21 @@ You should be able to move the agent around,
 or change layers,
 or wait,
 or hide the line between grid (better looking, not affecting the model)
+
+## Evaluation Plan
+
+### Performance Evaluation
+- Plot cumulative reward, episode length, and success rate per goal Q-table.  
+- Compare surface vs tunnel route utilization under different environmental conditions.  
+- Track decline in invalid-action frequency and improvement in reward over episodes.  
+
+### Convergence and Generalization
+- Convergence identified by stable cumulative reward and minimal ΔQ ≤ 1e-3.  
+- Generalization evaluated by testing trained Q-tables on unseen weather/crowd combinations.  
+- Compare relative difficulty across destinations based on convergence speed and final performance.
+
+### Visualization Tools
+Implemented in **Python** using:
+- **Matplotlib** for grid and route visualizations  
+- **Seaborn** for heatmaps and learning curves  
+- **NumPy/Pandas** for metrics logging and data analysis  
