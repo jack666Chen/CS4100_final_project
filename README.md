@@ -1,5 +1,24 @@
 # Northeastern Campus Navigator Guide
-Northeastern Campus Navigator is a Python based model, Python coded Reinforcement AI system of route guiding. This an AI-based navigator that aims to help student at Northeastern guide a good path to the goal destination.
+The **Smart Campus Navigator** is a reinforcement learning project that trains an agent to find efficient walking routes across Northeastern University’s campus under dynamic conditions.  
+
+
+The environment is modeled as a **two-layer grid**, representing both **outdoor walkways** and the **underground tunnel network** that runs beneath parts of campus.
+
+
+
+The agent uses **tabular Q-learning** to learn optimal movement policies across this environment.  
+
+
+In each episode, the agent starts from a random valid outdoor location and must reach a designated **goal building** such as Snell Library, ISEC, or Curry.
+
+
+Movement is **deterministic**: valid actions transition the agent to the neighboring cell or toggle between surface and tunnel layers, while **invalid actions** (off-grid or blocked) leave the agent in place and apply a penalty.
+
+
+Environmental conditions—**weather (clear, rain, snow)** and **crowd level (low, medium, high)**—change each episode, influencing traversal costs. Across training, the agent learns to minimize expected travel time by adapting its route to these dynamic conditions and by leveraging the tunnel network when beneficial.
+
+At the end of training, the project produces a **set of Q-tables**, each corresponding to a different goal destination on campus.
+When a user selects a destination, the system loads the pre-trained Q-table for that goal to generate an optimal route in real time.
 
 
 ## How to Run the Agent
