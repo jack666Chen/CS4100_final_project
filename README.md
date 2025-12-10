@@ -124,4 +124,10 @@ or hide the line between grid (better looking, not affecting the model)
 Implemented in **Python** using:
 - **Matplotlib** for grid and route visualizations  
 - **Seaborn** for heatmaps and learning curves  
-- **NumPy/Pandas** for metrics logging and data analysis  
+- **NumPy/Pandas** for metrics logging and data analysis
+
+## Forward thoughts and possible improvements
+
+While there actually still exist some part to improve, especially changing destintion, however, this function is actually planted inside, but we haven't done any training on those yet. Basically the model is able to change its goal building, so if you are not using Snell as default, you can change to other building name in the environment setup part of our code. However, I do believe the current reward system will not be working for most of other destination, because we are actually putting a high reward on bad weather tunnel usage. It may cause a bias in letting the agent use the underground tunnel to earn reward, but not actually using time find the path efficiently. This might be improved if we are actually training the agent in a random based destinations, where taking goal as part of the state, but in that case, since there are about twenty buildings in total, the amount of unique state we have to handle grow to about 200,000 in the best estimation. Which means it requires a huge amount time of training. Nevertheless, this is a good inspiration of how this thing should work, and maybe in future exploration, we may find a better solution that handles this specific limitation.
+
+## In the end, thanks to those who contribute to this project, and thanks to our potential user.    :D
